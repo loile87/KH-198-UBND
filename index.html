@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HỆ THỐNG QUẢN LÝ & THEO DÕI NHIỆM VỤ THI ĐUA - UBND PHƯỜNG PHƯỚC BÌNH</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS for Excel import/export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-gradient-to-r from-red-800 via-red-700 to-red-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-white/10 p-2.5 rounded-xl backdrop-blur-md border border-white/20">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-yellow-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight uppercase text-yellow-300">UBND PHƯỜNG PHƯỚC BÌNH</h1>
+                        <p class="text-xs text-red-100 font-medium">Hệ Thống Theo Dõi Tiến Độ Nhiệm Vụ Thi Đua & Chuyển Đổi Số</p>
+                    </div>
+                </div>
+
+                <!-- ADMIN CONTROL & ACTIONS -->
+                <div class="flex items-center space-x-3">
+                    <button id="authBtn" onclick="toggleAuthModal()" class="flex items-center space-x-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                        <i data-lucide="lock" id="authIcon" class="w-4 h-4 text-yellow-400"></i>
+                        <span id="authStatusText">Đăng nhập Admin</span>
+                    </button>
+
+                    <div id="adminActions" class="hidden flex items-center space-x-2 bg-red-900/50 p-1.5 rounded-lg border border-red-500/30">
+                        <button onclick="openAddTaskModal()" class="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Thêm Chỉ Tiêu</span>
+                        </button>
+                        <button onclick="exportToExcel()" class="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Xuất Excel</span>
+                        </button>
+                        <label class="flex items-center space-x-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Nhập Excel</span>
+                            <input type="file" id="excelImporter" accept=".xlsx, .xls" class="hidden" onchange="importFromExcel(event)">
+                        </label>
+                        <button onclick="resetToDefaultData()" class="flex items-center space-x-1.5 bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition" title="Khôi phục dữ liệu gốc">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            <span>Gốc</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABS FOR ANNEXES -->
+            <div class="flex space-x-1 border-t border-red-600/50 pt-2 pb-0">
+                <button onclick="switchTab('p1')" id="tab-p1" class="tab-btn px-5 py-2.5 rounded-t-lg font-medium text-sm transition flex items-center space-x-2 bg-white text-red-800 font-bold shadow">
+                    <i data-lucide="list-checks" class="w-4 h-4"></i>
+                    <span>Phụ Lục 1: Chỉ Tiêu Thi Đua 2026–2030</span>
+                </button>
+                <button onclick="switchTab('p2')" id="tab-p2" class="tab-btn px-5 py-2.5 rounded-t-lg font-medium text-sm transition flex items-center space-x-2 text-red-100 hover:bg-red-800/60">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Phụ Lục 2: Nhiệm Vụ Phân Công Chi Tiết</span>
+                </button>
+                <button onclick="switchTab('p3')" id="tab-p3" class="tab-btn px-5 py-2.5 rounded-t-lg font-medium text-sm transition flex items-center space-x-2 text-red-100 hover:bg-red-800/60">
+                    <i data-lucide="award" class="w-4 h-4"></i>
+                    <span>Phụ Lục 3: Đợt Thi Đua Đặc Biệt 500 Ngày</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- DASHBOARD STATS -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng Số Chỉ Tiêu</p>
+                        <h3 id="statTotal" class="text-2xl font-black text-slate-900 mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <i data-lucide="layers" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-xs text-slate-500 flex items-center space-x-1">
+                    <span class="font-medium text-slate-700">Đã phân bổ hoàn toàn</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Đã Hoàn Thành</p>
+                        <h3 id="statCompleted" class="text-2xl font-black text-emerald-600 mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-xs text-slate-500">
+                    <span id="statCompletedPct" class="font-bold text-emerald-600">0%</span> tổng nhiệm vụ
+                </div>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Đang Thực Hiện</p>
+                        <h3 id="statInProgress" class="text-2xl font-black text-amber-600 mt-1">0</h3>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <div class="mt-3 text-xs text-slate-500">
+                    Chưa hoàn thành: <span id="statPending" class="font-semibold text-slate-700">0</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tiến Độ Bình Quân</p>
+                        <h3 id="statAvgProgress" class="text-2xl font-black text-indigo-600 mt-1">0%</h3>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
+                    <div id="statProgressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD CHARTS & DISTRIBUTION -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Chart: Status & Sector -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm lg:col-span-1 flex flex-col justify-between">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center space-x-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4 text-slate-500"></i>
+                    <span>Tỷ Lệ Trạng Thái</span>
+                </h3>
+                <div class="relative flex items-center justify-center h-48">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Distribution by Unit -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center space-x-2">
+                    <i data-lucide="building-2" class="w-4 h-4 text-slate-500"></i>
+                    <span>Phân Bổ Theo Phòng Ban</span>
+                </h3>
+                <div id="unitDistributionList" class="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                    <!-- Dynamic unit list -->
+                </div>
+            </div>
+
+            <!-- Distribution by Leadership -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center space-x-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-500"></i>
+                    <span>Phân Bổ Theo Lãnh Đạo</span>
+                </h3>
+                <div id="leaderDistributionList" class="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                    <!-- Dynamic leader list -->
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTER & SEARCH BAR -->
+        <section class="glass-card p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                <!-- Search Text -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                    <input type="text" id="filterKeyword" oninput="applyFilters()" placeholder="Tìm chỉ tiêu, đơn vị..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none">
+                </div>
+
+                <!-- Sector Filter -->
+                <div>
+                    <select id="filterSector" onchange="applyFilters()" class="w-full py-2 px-3 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="">Tất cả Lĩnh vực</option>
+                    </select>
+                </div>
+
+                <!-- Leader Filter -->
+                <div>
+                    <select id="filterLeader" onchange="applyFilters()" class="w-full py-2 px-3 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="">Tất cả Lãnh đạo</option>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <select id="filterStatus" onchange="applyFilters()" class="w-full py-2 px-3 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="">Tất cả Trạng thái</option>
+                        <option value="Chưa thực hiện">Chưa thực hiện</option>
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                    </select>
+                </div>
+
+                <!-- Year Filter -->
+                <div>
+                    <select id="filterYear" onchange="applyFilters()" class="w-full py-2 px-3 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        <option value="">Tất cả Các Năm (2026-2030)</option>
+                        <option value="2026">Năm 2026</option>
+                        <option value="2027">Năm 2027</option>
+                        <option value="2028">Năm 2028</option>
+                        <option value="2029">Năm 2029</option>
+                        <option value="2030">Năm 2030</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN DATA TABLE -->
+        <section class="glass-card rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200/80 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <h2 id="tableTitle" class="font-bold text-slate-800 text-base">Danh Sách Chỉ Tiêu Nhiệm Vụ</h2>
+                    <span id="taskCountBadge" class="bg-red-100 text-red-800 text-xs px-2.5 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div class="text-xs text-slate-500">
+                    Bấm vào từng dòng để xem lịch sử & cập nhật tiến độ
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100/80 text-slate-700 uppercase text-[11px] font-bold tracking-wider border-b border-slate-200">
+                            <th class="p-3 w-12 text-center">STT</th>
+                            <th class="p-3 w-64">Chỉ Tiêu / Nội Dung Nhiệm Vụ</th>
+                            <th class="p-3 w-48">Mục Tiêu Năm & ĐVT</th>
+                            <th class="p-3 w-40">Lãnh Đạo Phụ Trách</th>
+                            <th class="p-3 w-44">Đơn Vị Chủ Trì / Phối Hợp</th>
+                            <th class="p-3 w-32 text-center">Tiến Độ %</th>
+                            <th class="p-3 w-32 text-center">Trạng Thái</th>
+                            <th class="p-3 w-44">Kết Quả / Sản Phẩm</th>
+                            <th class="p-3 w-28 text-center">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody" class="divide-y divide-slate-200/70 text-xs">
+                        <!-- Dynamic rows inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs space-y-2">
+            <p class="font-medium text-slate-300">ỦY BÂN NHÂN DÂN PHƯỜNG PHƯỚC BÌNH - HỆ THỐNG QUẢN LÝ NHIỆM VỤ NỘI BỘ LOCAL</p>
+            <p>Phát triển đáp ứng Quy chuẩn Hành chính - Lưu trữ dữ liệu bảo mật trực tiếp trên LocalStorage</p>
+        </div>
+    </footer>
+
+    <!-- UPDATE MODAL (Cập nhật tiến độ & Lịch sử) -->
+    <div id="updateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 bg-gradient-to-r from-red-800 to-red-700 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-5 h-5"></i>
+                    <span>Cập Nhật Báo Cáo Tiến Độ Nhiệm Vụ</span>
+                </h3>
+                <button onclick="closeUpdateModal()" class="text-white/80 hover:text-white p-1">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-5 custom-scrollbar text-xs">
+                <!-- Readonly info box -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                    <div>
+                        <span class="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Tên chỉ tiêu/Nhiệm vụ:</span>
+                        <p id="modalTaskTitle" class="font-bold text-slate-800 text-sm mt-0.5"></p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-slate-600 pt-2 border-t border-slate-200/80">
+                        <div>
+                            <span class="font-semibold text-slate-500">Lãnh đạo phụ trách:</span>
+                            <p id="modalLeader" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-500">Đơn vị chủ trì:</span>
+                            <p id="modalUnit" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="font-semibold text-slate-500">Đơn vị phối hợp:</span>
+                            <p id="modalCoop" class="font-medium text-slate-800"></p>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="font-semibold text-slate-500">Mục tiêu & ĐVT:</span>
+                            <p id="modalTarget" class="font-medium text-slate-800"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update Form -->
+                <form id="updateForm" onsubmit="saveUpdate(event)" class="space-y-4">
+                    <input type="hidden" id="modalTaskId">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Trạng thái mới <span class="text-red-500">*</span></label>
+                            <select id="modalStatus" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                                <option value="Chưa thực hiện">Chưa thực hiện</option>
+                                <option value="Đang thực hiện">Đang thực hiện</option>
+                                <option value="Hoàn thành">Hoàn thành</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Tiến độ (%) <span class="text-red-500">*</span></label>
+                            <input type="number" id="modalProgress" min="0" max="100" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Kết quả / Sản phẩm đạt được <span class="text-red-500">*</span></label>
+                        <textarea id="modalResult" rows="2" required placeholder="Nhập kết quả chi tiết, văn bản ban hành hoặc sản phẩm hoàn thành..." class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Người cập nhật báo cáo <span class="text-red-500">* (Bắt buộc)</span></label>
+                        <input type="text" id="modalUpdater" required placeholder="Họ tên cán bộ / chuyên viên báo cáo" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2.5 rounded-lg transition shadow">
+                        Lưu Cập Nhật & Ghi Lịch Sử
+                    </button>
+                </form>
+
+                <!-- Update History Timeline -->
+                <div class="pt-4 border-t border-slate-200">
+                    <h4 class="font-bold text-slate-800 mb-3 flex items-center space-x-1.5">
+                        <i data-lucide="history" class="w-4 h-4 text-slate-500"></i>
+                        <span>Lịch Sử Cập Nhật Theo Từng Giai Đoạn</span>
+                    </h4>
+                    <div id="historyTimeline" class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                        <!-- History items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL (Mật khẩu Admin) -->
+    <div id="authModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200 space-y-4">
+            <div class="text-center space-y-1">
+                <div class="inline-flex p-3 bg-red-100 text-red-700 rounded-full mb-2">
+                    <i data-lucide="key-round" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">Xác Thực Quyền Admin</h3>
+                <p class="text-xs text-slate-500">Nhập mật khẩu quản trị để mở khóa chức năng Thêm/Xóa/Nhập/Xuất Excel</p>
+            </div>
+
+            <form onsubmit="handleAuth(event)" class="space-y-3">
+                <div>
+                    <input type="password" id="adminPasswordInput" placeholder="Nhập mật khẩu Admin..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none text-xs">
+                    <p id="authError" class="text-red-600 text-[11px] mt-1 hidden">Mật khẩu không chính xác!</p>
+                </div>
+                <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-2 rounded-lg text-xs transition">
+                    Xác Nhận
+                </button>
+                <button type="button" onclick="toggleAuthModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition">
+                    Hủy
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT TASK MODAL (Chỉ Admin mới có) -->
+    <div id="addTaskModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 bg-slate-800 text-white flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center space-x-2">
+                    <i data-lucide="plus-square" class="w-5 h-5"></i>
+                    <span>Thêm / Khởi Tạo Chỉ Tiêu Nhiệm Vụ Mới</span>
+                </h3>
+                <button onclick="closeAddTaskModal()" class="text-white/80 hover:text-white p-1">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form onsubmit="saveNewTask(event)" class="p-6 overflow-y-auto space-y-4 custom-scrollbar text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Lĩnh vực <span class="text-red-500">*</span></label>
+                    <input type="text" id="addSector" required placeholder="Ví dụ: I. Về kinh tế, II. Về xã hội..." class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Chỉ tiêu / Tên nhiệm vụ <span class="text-red-500">*</span></label>
+                    <textarea id="addTitle" rows="2" required class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Đơn vị tính</label>
+                        <input type="text" id="addUnit" placeholder="%, Cơ sở, Dự án..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Mục tiêu Giai đoạn 2026-2030</label>
+                        <input type="text" id="addTarget2030" placeholder="Chỉ tiêu tổng quát..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Lãnh đạo UBND phụ trách <span class="text-red-500">*</span></label>
+                        <input type="text" id="addLeader" required placeholder="Chủ tịch / Phó Chủ tịch..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Đơn vị chủ trì <span class="text-red-500">*</span></label>
+                        <input type="text" id="addMainUnit" required placeholder="Phòng Kinh tế, Hà tầng và Đô thị..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Đơn vị phối hợp thực hiện</label>
+                    <input type="text" id="addCoopUnit" placeholder="Các phòng, ban, đơn vị liên quan..." class="w-full p-2 border border-slate-300 rounded-lg outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg transition shadow">
+                    Tạo Nhiệm Vụ Mới
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // ADMIN PASSWORD
+        const ADMIN_PASS = "Admin@2026";
+        let isAdmin = false;
+
+        // CURRENT ACTIVE TAB: 'p1', 'p2', 'p3'
+        let currentTab = 'p1';
+
+        // DEFAULT DATA FROM THE ATTACHED ANNEXES (Phụ lục 1, Phụ lục 2, Phụ lục 3)
+        const DEFAULT_ANNEX_1 = [
+            // I. Về kinh tế
+            { id: "P1_1", stt: 1, sector: "I. Về kinh tế", title: "Tốc độ tăng tổng thu ngân sách nhà nước trên địa bàn", unit: "%/năm", target2030: "10-12", y2026: "10-12", y2027: "10-12", y2028: "10-12", y2029: "10-12", y2030: "10-12", leader: "Chủ tịch, Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Các phòng, đơn vị; Ban điều hành các khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_2", stt: 2, sector: "I. Về kinh tế", title: "Tốc độ tăng tổng giá trị sản phẩm trên địa bàn phường", unit: "%/năm", target2030: "Bình quân từ 10%/năm", y2026: "≥10", y2027: "≥10", y2028: "≥10", y2029: "≥10", y2030: "≥10", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Các phòng, đơn vị; doanh nghiệp; hợp tác xã; hộ kinh doanh", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_3", stt: 3, sector: "I. Về kinh tế", title: "Phát triển doanh nghiệp, hợp tác xã, cơ sở sản xuất, kinh doanh thành lập mới", unit: "Cơ sở", target2030: "Từ 1.750 cơ sở", y2026: "≥350", y2027: "≥350", y2028: "≥350", y2029: "≥350", y2030: "≥350", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Trung tâm Phục vụ hành chính công; các phòng, đơn vị; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_4", stt: 4, sector: "I. Về kinh tế", title: "Tỷ lệ chi ngân sách cho ứng dụng khoa học, công nghệ, đổi mới sáng tạo và chuyển đổi số", unit: "% dự toán chi", target2030: "Tối thiểu 3% hàng năm", y2026: "≥3", y2027: "≥3", y2028: "≥3", y2029: "≥3", y2030: "≥3", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Phòng Kinh tế, Hạ tầng và Đô thị; Văn phòng HĐND và UBND; các đơn vị", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_5", stt: 5, sector: "I. Về kinh tế", title: "Thu hút đầu tư trung tâm thương mại và cụm công nghiệp", unit: "Dự án/công trình", target2030: "01-02 trung tâm thương mại; 01 cụm công nghiệp", y2026: "Rà soát quy hoạch, đề xuất lập hồ sơ đề nghị thành lập", y2027: "Hoàn thiện hồ sơ; triển khai thủ tục đề nghị", y2028: "Thu hút đầu tư hạ tầng", y2029: "Triển khai xây dựng", y2030: "Đưa vào hoạt động tối thiểu 01 công trình", leader: "Chủ tịch, Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Các sở, ngành; Trung tâm Phát triển quỹ đất; doanh nghiệp", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+
+            // II. Về xã hội
+            { id: "P1_6", stt: 1, sector: "II. Về xã hội", title: "Mức tăng thu nhập bình quân đầu người so với năm 2025", unit: "%", target2030: "Trên 16%", y2026: "≥3.0", y2027: "≥6.2", y2028: "≥9.5", y2029: "≥12.8", y2030: ">16", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Phòng Văn hóa - Xã hội; các đơn vị, khu phố; doanh nghiệp", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_7", stt: 2, sector: "II. Về xã hội", title: "Tỷ lệ dân số tham gia bảo hiểm y tế", unit: "%", target2030: "Từ 95% trở lên", y2026: "≥96", y2027: "≥97", y2028: "≥98", y2029: "≥99", y2030: "100", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Trạm Y tế; cơ quan bảo hiểm xã hội; các trường học; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_8", stt: 3, sector: "II. Về xã hội", title: "Phấn đấu không phát sinh hộ nghèo, tỷ lệ hộ nghèo duy trì 0%", unit: "Kết quả", target2030: "Không còn hộ nghèo", y2026: "Duy trì 0% nghèo", y2027: "Duy trì 0% nghèo", y2028: "Duy trì 0% nghèo", y2029: "Duy trì 0% nghèo", y2030: "Duy trì 0% nghèo", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Các cơ quan, đơn vị; MTTQVN; đoàn thể; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_9", stt: 4, sector: "II. Về xã hội", title: "Trường học đạt chuẩn quốc gia", unit: "Trường/%", target2030: "Duy trì trường chuẩn; đạt 84.6% vào năm 2030", y2026: "Rà soát tiêu chí từng trường", y2027: "Hoàn thiện kế hoạch đầu tư", y2028: "Khắc phục tiêu chí chưa đạt", y2029: "Hoàn thành các mốc chuẩn", y2030: "Đạt tỷ lệ 84.6%", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Phòng Kinh tế, Hạ tầng và Đô thị; các trường học; đơn vị liên quan", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_10", stt: 5, sector: "II. Về xã hội", title: "Tỷ lệ gia đình văn hóa; tỷ lệ khu phố văn hóa", unit: "%", target2030: "Hàng năm từ 95% trở lên", y2026: "≥95", y2027: "≥95", y2028: "≥95", y2029: "≥95", y2030: "≥95", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "MTTQ, đoàn thể; Trung tâm Dịch vụ tổng hợp; các khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_11", stt: 6, sector: "II. Về xã hội", title: "Tỷ lệ lao động đã qua đào tạo có bằng cấp, chứng chỉ", unit: "%", target2030: "40%", y2026: "24.05", y2027: "28%", y2028: "32.03", y2029: "36%", y2030: "40", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Cơ sở giáo dục nghề nghiệp; doanh nghiệp; đoàn thể; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_12", stt: 7, sector: "II. Về xã hội", title: "Tỷ lệ thất nghiệp", unit: "%", target2030: "< 2", y2026: "<2.4", y2027: "<2.3", y2028: "<2.2", y2029: "<2.1", y2030: "<2", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Cơ sở giáo dục nghề nghiệp; doanh nghiệp; đoàn thể; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_13", stt: 8, sector: "II. Về xã hội", title: "Tỷ lệ lao động trong độ tuổi tham gia bảo hiểm thất nghiệp", unit: "%", target2030: "50", y2026: "47", y2027: "48", y2028: "49", y2029: "50", y2030: "50", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Cơ sở giáo dục nghề nghiệp; doanh nghiệp; đoàn thể; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_14", stt: 9, sector: "II. Về xã hội", title: "Tỷ lệ lao động trong độ tuổi tham gia bảo hiểm xã hội", unit: "%", target2030: "60", y2026: "53", y2027: "54.5", y2028: "56", y2029: "58", y2030: "60", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Cơ sở giáo dục nghề nghiệp; doanh nghiệp; đoàn thể; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+
+            // III. Về môi trường
+            { id: "P1_15", stt: 1, sector: "III. Về môi trường", title: "Tỷ lệ dân số sử dụng nước sạch hợp vệ sinh", unit: "%", target2030: "100", y2026: "100", y2027: "100", y2028: "100", y2029: "100", y2030: "100", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Đơn vị cấp nước; Trung tâm Dịch vụ tổng hợp; các khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_16", stt: 2, sector: "III. Về môi trường", title: "Tỷ lệ thu gom chất thải rắn sinh hoạt", unit: "%", target2030: "Tối thiểu 85% và không thấp hơn hiện trạng", y2026: "≥85", y2027: "≥85", y2028: "≥85", y2029: "≥85", y2030: "≥85 và duy trì bền vững", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị; Trung tâm Dịch vụ tổng hợp", coopUnit: "Các phòng; khu phố; đơn vị thu gom", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_17", stt: 3, sector: "III. Về môi trường", title: "Tỷ lệ thu gom chất thải nguy hại", unit: "%", target2030: "100", y2026: "100", y2027: "100", y2028: "100", y2029: "100", y2030: "100", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị; Trung tâm Dịch vụ tổng hợp", coopUnit: "Các phòng; khu phố; đơn vị thu gom", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_18", stt: 4, sector: "III. Về môi trường", title: "Tỷ lệ thu gom chất thải y tế", unit: "%", target2030: "100", y2026: "100", y2027: "100", y2028: "100", y2029: "100", y2030: "100", leader: "Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị; Trung tâm Dịch vụ tổng hợp; Trạm Y tế", coopUnit: "Các phòng; đơn vị; khu phố; đơn vị thu gom", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+
+            // IV. Về quốc phòng - an ninh
+            { id: "P1_19", stt: 1, sector: "IV. Về quốc phòng - an ninh", title: "Hoàn thành chỉ tiêu giao quân, giáo dục kiến thức quốc phòng và an ninh cho các đối tượng theo quy định", unit: "%", target2030: "100% / 100%", y2026: "100 / 100", y2027: "100 / 100", y2028: "100 / 100", y2029: "100 / 100", y2030: "100 / 100", leader: "Chủ tịch UBND phường", mainUnit: "Ban Chỉ huy quân sự phường", coopUnit: "Công an phường; các phòng, đơn vị; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_20", stt: 2, sector: "IV. Về quốc phòng - an ninh", title: "Giữ vững an ninh chính trị, trật tự an toàn xã hội; giảm vụ việc an ninh trật tự, tai nạn giao thông, cháy nổ", unit: "Kết quả", target2030: "Đạt chỉ tiêu thẩm quyền; giảm hàng năm", y2026: "Đạt chỉ tiêu giao; giảm so năm trước", y2027: "Đạt chỉ tiêu giao; giảm so năm trước", y2028: "Đạt chỉ tiêu giao; giảm so năm trước", y2029: "Đạt chỉ tiêu giao; giảm so năm trước", y2030: "Đạt chỉ tiêu giao; giữ vững ổn định", leader: "Chủ tịch UBND phường", mainUnit: "Công an phường", coopUnit: "Ban Chỉ huy quân sự; các phòng, đơn vị; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_21", stt: 3, sector: "IV. Về quốc phòng - an ninh", title: "Đơn thư khiếu nại, tố cáo được xử lý nguy cơ từ cơ sở; không hình thành vụ việc phức tạp, đông người, điểm nóng", unit: "%/Kết quả", target2030: "100% thuộc thẩm quyền; không có điểm nóng", y2026: "100%; không có điểm nóng", y2027: "100%; không có điểm nóng", y2028: "100%; không có điểm nóng", y2029: "100%; không có điểm nóng", y2030: "100%; không có điểm nóng", leader: "Chủ tịch UBND phường", mainUnit: "Văn phòng HĐND và UBND phường", coopUnit: "Công an phường; các phòng, đơn vị; khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_22", stt: 4, sector: "IV. Về quốc phòng - an ninh", title: "Phòng, chống tham nhũng, lãng phí, tiêu cực; xử lý nghiêm vụ việc phát sinh", unit: "%/Kết quả", target2030: "100% vụ việc phát hiện được xử lý, kiến nghị xử lý", y2026: "100%", y2027: "100%", y2028: "100%", y2029: "100%", y2030: "100%", leader: "Chủ tịch UBND phường", mainUnit: "Văn phòng HĐND và UBND phường", coopUnit: "Công an phường; các phòng, đơn vị; MTTQ và đoàn thể", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P1_23", stt: 5, sector: "IV. Về quốc phòng - an ninh", title: "Xây dựng phường không còn tệ nạn ma túy", unit: "Kết quả", target2030: "Phường không còn tệ nạn ma túy", y2026: "Rà soát 100% địa bàn; công nhận mô hình không ma túy", y2027: "Kiểm soát địa bàn trọng điểm; phấn đấu 100% khu phố không ma túy", y2028: "Cơ bản kiểm soát, phường không có ma túy", y2029: "Tăng cường kiểm soát, duy trì phường không ma túy", y2030: "Phường không còn tệ nạn ma túy", leader: "Chủ tịch UBND phường", mainUnit: "Công an phường", coopUnit: "Các phòng, đơn vị; MTTQ, đoàn thể; Ban điều hành khu phố", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] }
+        ];
+
+        // DEFAULT DATA FOR ANNEX 2 & 3 (Sample initialize)
+        const DEFAULT_ANNEX_2 = [
+            { id: "P2_1", stt: 1, sector: "Phát triển Kinh tế & Đô thị", title: "Xây dựng Đề án phát triển hạ tầng số và đô thị thông minh giai đoạn 2026–2030", unit: "Đề án", target2030: "01 Đề án hoàn thành", y2026: "Trình duyệt Đề án", y2027: "Triển khai giai đoạn 1", y2028: "Giai đoạn 2", y2029: "Đánh giá", y2030: "Tổng kết", leader: "Chủ tịch, Phó Chủ tịch UBND phường phụ trách kinh tế", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Văn phòng HĐND và UBND", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] }
+        ];
+
+        const DEFAULT_ANNEX_3 = [
+            { id: "P3_1", stt: 1, sector: "Đợt thi đua 500 ngày đêm", title: "Tổ chức quán quán quán quán triệt và ban hành kế hoạch triển khai đợt thi đua 500 ngày đêm", unit: "Kế hoạch", target2030: "Hoàn thành trong tháng 6/2026", y2026: "Hoàn thành trước 10/6/2026", y2027: "-", y2028: "-", y2029: "-", y2030: "-", leader: "Chủ tịch, các Phó Chủ tịch UBND phường", mainUnit: "Phòng Kinh tế, Hạ tầng và Đô thị", coopUnit: "Văn phòng HĐND và UBND; các phòng, đơn vị", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] },
+            { id: "P3_2", stt: 2, sector: "Đợt thi đua 500 ngày đêm", title: "Tổ chức tuyên truyền Nghị quyết, Chương trình hành động số 01-CTr-UBND", unit: "Kế hoạch", target2030: "Thường xuyên; đạt 100% cán bộ", y2026: "Hoàn thành đợt 1 trước 30/6/2026", y2027: "Duy trì", y2028: "Duy trì", y2029: "Duy trì", y2030: "Duy trì", leader: "Phó Chủ tịch UBND phường phụ trách văn hóa - xã hội", mainUnit: "Phòng Văn hóa - Xã hội", coopUnit: "Trung tâm Dịch vụ tổng hợp; MTTQ", status: "Chưa thực hiện", progress: 0, result: "Chưa có báo cáo", history: [] }
+        ];
+
+        // LOAD DATA FROM LOCAL STORAGE OR USE DEFAULT
+        function loadData(tab) {
+            const stored = localStorage.getItem("UBND_PB_DATA_" + tab);
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch(e) {
+                    console.error("Local storage read error", e);
+                }
+            }
+            if (tab === 'p1') return JSON.parse(JSON.stringify(DEFAULT_ANNEX_1));
+            if (tab === 'p2') return JSON.parse(JSON.stringify(DEFAULT_ANNEX_2));
+            if (tab === 'p3') return JSON.parse(JSON.stringify(DEFAULT_ANNEX_3));
+            return [];
+        }
+
+        function saveData(tab, data) {
+            localStorage.setItem("UBND_PB_DATA_" + tab, JSON.stringify(data));
+        }
+
+        // CURRENT WORKING DATA
+        let currentData = [];
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            switchTab('p1');
+        });
+
+        // SWITCH TAB FUNCTIONALITY
+        function switchTab(tab) {
+            currentTab = tab;
+            currentData = loadData(tab);
+
+            // Update tab UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-5 py-2.5 rounded-t-lg font-medium text-sm transition flex items-center space-x-2 text-red-100 hover:bg-red-800/60";
+            });
+
+            const activeBtn = document.getElementById("tab-" + tab);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-5 py-2.5 rounded-t-lg font-medium text-sm transition flex items-center space-x-2 bg-white text-red-800 font-bold shadow";
+            }
+
+            // Titles & UI
+            const titleMap = {
+                'p1': 'Phụ Lục 1: Bảng Chỉ Tiêu Thi Đua 2026–2030',
+                'p2': 'Phụ Lục 2: Phân Công Chi Tiết Đơn Vị Chủ Trì & Phối Hợp',
+                'p3': 'Phụ Lục 3: Đợt Thi Đua Đặc Biệt 500 Ngày Đêm Đoàn Kết - Kỷ Cương'
+            };
+            document.getElementById('tableTitle').innerText = titleMap[tab];
+
+            populateFilterDropdowns();
+            renderDashboardAndTable();
+        }
+
+        // POPULATE DYNAMIC DROPDOWNS FOR FILTERS
+        function populateFilterDropdowns() {
+            const sectors = [...new Set(currentData.map(item => item.sector))].filter(Boolean);
+            const leaders = [...new Set(currentData.map(item => item.leader))].filter(Boolean);
+
+            const sectorSelect = document.getElementById('filterSector');
+            sectorSelect.innerHTML = '<option value="">Tất cả Lĩnh vực</option>' + 
+                sectors.map(s => `<option value="${s}">${s}</option>`).join('');
+
+            const leaderSelect = document.getElementById('filterLeader');
+            leaderSelect.innerHTML = '<option value="">Tất cả Lãnh đạo</option>' + 
+                leaders.map(l => `<option value="${l}">${l}</option>`).join('');
+        }
+
+        // RENDER DASHBOARD & TABLE DATA
+        function renderDashboardAndTable() {
+            const filtered = getFilteredData();
+
+            // Update Stats
+            const total = filtered.length;
+            const completed = filtered.filter(i => i.status === 'Hoàn thành').length;
+            const inProgress = filtered.filter(i => i.status === 'Đang thực hiện').length;
+            const pending = filtered.filter(i => i.status === 'Chưa thực hiện').length;
+
+            const sumProgress = filtered.reduce((acc, curr) => acc + (Number(curr.progress) || 0), 0);
+            const avgProgress = total > 0 ? Math.round(sumProgress / total) : 0;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statCompleted').innerText = completed;
+            document.getElementById('statCompletedPct').innerText = (total > 0 ? Math.round((completed/total)*100) : 0) + '%';
+            document.getElementById('statInProgress').innerText = inProgress;
+            document.getElementById('statPending').innerText = pending;
+            document.getElementById('statAvgProgress').innerText = avgProgress + '%';
+            document.getElementById('statProgressBar').style.width = avgProgress + '%';
+
+            document.getElementById('taskCountBadge').innerText = filtered.length;
+
+            // Render Distributions
+            renderUnitDistribution(filtered);
+            renderLeaderDistribution(filtered);
+
+            // Render Chart
+            renderStatusChart(completed, inProgress, pending);
+
+            // Render Table
+            renderTableRows(filtered);
+        }
+
+        // FILTER LOGIC
+        function getFilteredData() {
+            const keyword = document.getElementById('filterKeyword').value.toLowerCase().trim();
+            const sector = document.getElementById('filterSector').value;
+            const leader = document.getElementById('filterLeader').value;
+            const status = document.getElementById('filterStatus').value;
+            const year = document.getElementById('filterYear').value;
+
+            return currentData.filter(item => {
+                if (sector && item.sector !== sector) return false;
+                if (leader && item.leader !== leader) return false;
+                if (status && item.status !== status) return false;
+
+                // Year filter check
+                if (year) {
+                    const yearKey = 'y' + year;
+                    if (!item[yearKey] || item[yearKey] === '-') return false;
+                }
+
+                if (keyword) {
+                    const matchTitle = item.title ? item.title.toLowerCase().includes(keyword) : false;
+                    const matchMainUnit = item.mainUnit ? item.mainUnit.toLowerCase().includes(keyword) : false;
+                    const matchCoopUnit = item.coopUnit ? item.coopUnit.toLowerCase().includes(keyword) : false;
+                    const matchLeader = item.leader ? item.leader.toLowerCase().includes(keyword) : false;
+                    if (!matchTitle && !matchMainUnit && !matchCoopUnit && !matchLeader) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function applyFilters() {
+            renderDashboardAndTable();
+        }
+
+        // RENDER UNITS & LEADERS DISTRIBUTION
+        function renderUnitDistribution(data) {
+            const counts = {};
+            data.forEach(item => {
+                const u = item.mainUnit || 'Chưa phân công';
+                counts[u] = (counts[u] || 0) + 1;
+            });
+
+            const container = document.getElementById('unitDistributionList');
+            if (Object.keys(counts).length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-xs italic">Không có dữ liệu</p>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(counts).map(([unit, count]) => `
+                <div class="flex items-center justify-between text-xs">
+                    <span class="truncate max-w-[180px] font-medium text-slate-700" title="${unit}">${unit}</span>
+                    <span class="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-md border border-slate-200">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderLeaderDistribution(data) {
+            const counts = {};
+            data.forEach(item => {
+                const l = item.leader || 'Chưa phân công';
+                counts[l] = (counts[l] || 0) + 1;
+            });
+
+            const container = document.getElementById('leaderDistributionList');
+            if (Object.keys(counts).length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-xs italic">Không có dữ liệu</p>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(counts).map(([leader, count]) => `
+                <div class="flex items-center justify-between text-xs">
+                    <span class="truncate max-w-[180px] font-medium text-slate-700" title="${leader}">${leader}</span>
+                    <span class="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-md border border-slate-200">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        // CHART.JS INTEGRATION
+        let statusChartInstance = null;
+        function renderStatusChart(completed, inProgress, pending) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) {
+                statusChartInstance.destroy();
+            }
+
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hoàn thành', 'Đang thực hiện', 'Chưa thực hiện'],
+                    datasets: [{
+                        data: [completed, inProgress, pending],
+                        backgroundColor: ['#10b981', '#f59e0b', '#cbd5e1'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        // RENDER TABLE ROWS
+        function renderTableRows(data) {
+            const tbody = document.getElementById('taskTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="p-8 text-center text-slate-400 font-medium">
+                            Không tìm thấy chỉ tiêu/nhiệm vụ phù hợp với bộ lọc.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let currentSectorHeader = '';
+
+            data.forEach((item, index) => {
+                // Group by Sector if sector changes
+                if (item.sector && item.sector !== currentSectorHeader) {
+                    currentSectorHeader = item.sector;
+                    const headerRow = document.createElement('tr');
+                    headerRow.className = "bg-slate-200/60 font-bold text-slate-800 uppercase text-[11px] tracking-wide";
+                    headerRow.innerHTML = `
+                        <td colspan="9" class="px-4 py-2 border-y border-slate-300">
+                            <i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1 text-red-700"></i> ${currentSectorHeader}
+                        </td>
+                    `;
+                    tbody.appendChild(headerRow);
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition group border-b border-slate-200/70";
+
+                // Badge colors
+                let statusBadge = '';
+                if (item.status === 'Hoàn thành') {
+                    statusBadge = '<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-1 rounded-full text-[10px] inline-flex items-center space-x-1"><i data-lucide="check" class="w-3 h-3"></i><span>Hoàn thành</span></span>';
+                } else if (item.status === 'Đang thực hiện') {
+                    statusBadge = '<span class="bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded-full text-[10px] inline-flex items-center space-x-1"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i><span>Đang làm</span></span>';
+                } else {
+                    statusBadge = '<span class="bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-full text-[10px]">Chưa làm</span>';
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-slate-500">${item.stt || (index + 1)}</td>
+                    <td class="p-3">
+                        <p class="font-bold text-slate-800 leading-snug">${item.title}</p>
+                    </td>
+                    <td class="p-3 text-slate-600">
+                        <div class="font-medium text-slate-700">${item.target2030 || '-'}</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">ĐVT: ${item.unit || 'Theo nội dung'}</div>
+                    </td>
+                    <td class="p-3 font-medium text-slate-700">${item.leader}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-blue-900">${item.mainUnit}</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">PH: ${item.coopUnit || 'Không'}</div>
+                    </td>
+                    <td class="p-3 text-center">
+                        <div class="font-bold text-slate-800">${item.progress || 0}%</div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                            <div class="bg-red-600 h-1.5 rounded-full" style="width: ${item.progress || 0}%"></div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center">${statusBadge}</td>
+                    <td class="p-3 text-slate-600 max-w-[180px] truncate" title="${item.result || ''}">${item.result || 'Chưa cập nhật'}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center space-x-1">
+                            <button onclick="openUpdateModal('${item.id}')" class="bg-red-50 hover:bg-red-100 text-red-700 p-1.5 rounded-lg font-semibold text-xs transition border border-red-200" title="Cập nhật báo cáo & Lịch sử">
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                            </button>
+                            ${isAdmin ? `
+                                <button onclick="deleteTask('${item.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 p-1.5 rounded-lg font-semibold text-xs transition border border-rose-200" title="Xóa chỉ tiêu">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        // UPDATE MODAL & HISTORY LOGIC
+        function openUpdateModal(id) {
+            const item = currentData.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modalTaskId').value = item.id;
+            document.getElementById('modalTaskTitle').innerText = item.title;
+            document.getElementById('modalLeader').innerText = item.leader;
+            document.getElementById('modalUnit').innerText = item.mainUnit;
+            document.getElementById('modalCoop').innerText = item.coopUnit || 'Không';
+            document.getElementById('modalTarget').innerText = `${item.target2030 || ''} (${item.unit || ''})`;
+
+            document.getElementById('modalStatus').value = item.status || 'Chưa thực hiện';
+            document.getElementById('modalProgress').value = item.progress || 0;
+            document.getElementById('modalResult').value = item.result !== 'Chưa có báo cáo' ? item.result : '';
+            document.getElementById('modalUpdater').value = '';
+
+            renderHistoryTimeline(item.history || []);
+
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.add('hidden');
+        }
+
+        function saveUpdate(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalTaskId').value;
+            const item = currentData.find(i => i.id === id);
+            if (!item) return;
+
+            const updater = document.getElementById('modalUpdater').value.trim();
+            if (!updater) {
+                alert("Vui lòng nhập tên người cập nhật báo cáo theo quy định!");
+                return;
+            }
+
+            const newStatus = document.getElementById('modalStatus').value;
+            const newProgress = parseInt(document.getElementById('modalProgress').value, 10);
+            const newResult = document.getElementById('modalResult').value.trim();
+
+            const timestamp = new Date().toLocaleString('vi-VN');
+
+            // Add to history log
+            if (!item.history) item.history = [];
+            item.history.unshift({
+                time: timestamp,
+                status: newStatus,
+                progress: newProgress,
+                result: newResult,
+                updater: updater
+            });
+
+            // Update item fields
+            item.status = newStatus;
+            item.progress = newProgress;
+            item.result = newResult;
+
+            saveData(currentTab, currentData);
+            closeUpdateModal();
+            renderDashboardAndTable();
+            alert("Cập nhật báo cáo tiến độ thành công!");
+        }
+
+        function renderHistoryTimeline(history) {
+            const container = document.getElementById('historyTimeline');
+            if (!history || history.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-xs italic">Chưa có lịch sử báo cáo cập nhật nào.</p>';
+                return;
+            }
+
+            container.innerHTML = history.map(h => `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+                    <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                        <span class="text-red-700 flex items-center space-x-1">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span>${h.time}</span>
+                        </span>
+                        <span class="bg-white px-2 py-0.5 rounded border border-slate-200">${h.status} (${h.progress}%)</span>
+                    </div>
+                    <p class="text-slate-800 text-xs mt-1 font-medium">${h.result}</p>
+                    <div class="text-[10px] text-slate-500 font-semibold">Người báo cáo: ${h.updater}</div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // AUTH & ADMIN FUNCTIONALITIES
+        function toggleAuthModal() {
+            const modal = document.getElementById('authModal');
+            document.getElementById('authError').classList.add('hidden');
+            document.getElementById('adminPasswordInput').value = '';
+            modal.classList.toggle('hidden');
+        }
+
+        function handleAuth(e) {
+            e.preventDefault();
+            const inputPass = document.getElementById('adminPasswordInput').value;
+            if (inputPass === ADMIN_PASS) {
+                isAdmin = true;
+                document.getElementById('authStatusText').innerText = "Admin đã đăng nhập";
+                document.getElementById('authBtn').className = "flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm";
+                document.getElementById('authIcon').setAttribute('data-lucide', 'unlock');
+                document.getElementById('adminActions').classList.remove('hidden');
+                toggleAuthModal();
+                renderDashboardAndTable();
+            } else {
+                document.getElementById('authError').classList.remove('hidden');
+            }
+        }
+
+        function openAddTaskModal() {
+            if (!isAdmin) return;
+            document.getElementById('addTaskModal').classList.remove('hidden');
+        }
+
+        function closeAddTaskModal() {
+            document.getElementById('addTaskModal').classList.add('hidden');
+        }
+
+        function saveNewTask(e) {
+            e.preventDefault();
+            const newTask = {
+                id: 'CUSTOM_' + Date.now(),
+                stt: currentData.length + 1,
+                sector: document.getElementById('addSector').value.trim(),
+                title: document.getElementById('addTitle').value.trim(),
+                unit: document.getElementById('addUnit').value.trim(),
+                target2030: document.getElementById('addTarget2030').value.trim(),
+                leader: document.getElementById('addLeader').value.trim(),
+                mainUnit: document.getElementById('addMainUnit').value.trim(),
+                coopUnit: document.getElementById('addCoopUnit').value.trim(),
+                status: 'Chưa thực hiện',
+                progress: 0,
+                result: 'Chưa có báo cáo',
+                history: []
+            };
+
+            currentData.push(newTask);
+            saveData(currentTab, currentData);
+            closeAddTaskModal();
+            populateFilterDropdowns();
+            renderDashboardAndTable();
+            alert("Thêm chỉ tiêu nhiệm vụ mới thành công!");
+        }
+
+        function deleteTask(id) {
+            if (!isAdmin) return;
+            if (confirm("Bạn có chắc chắn muốn xóa chỉ tiêu nhiệm vụ này khỏi hệ thống?")) {
+                currentData = currentData.filter(i => i.id !== id);
+                saveData(currentTab, currentData);
+                renderDashboardAndTable();
+            }
+        }
+
+        function resetToDefaultData() {
+            if (!isAdmin) return;
+            if (confirm("Bạn có chắc chắn muốn khôi phục dữ liệu gốc ban đầu từ Phụ lục? Mọi thay đổi báo cáo local hiện tại sẽ bị ghi đè!")) {
+                localStorage.removeItem("UBND_PB_DATA_" + currentTab);
+                currentData = loadData(currentTab);
+                populateFilterDropdowns();
+                renderDashboardAndTable();
+                alert("Đã khôi phục dữ liệu gốc thành công!");
+            }
+        }
+
+        // EXCEL EXPORT & IMPORT
+        function exportToExcel() {
+            if (!isAdmin) return;
+            const exportList = currentData.map((item, idx) => ({
+                "STT": item.stt || (idx + 1),
+                "Lĩnh vực": item.sector,
+                "Chỉ tiêu / Nhiệm vụ": item.title,
+                "Đơn vị tính": item.unit,
+                "Giai đoạn 2026-2030": item.target2030,
+                "Lãnh đạo phụ trách": item.leader,
+                "Cơ quan chủ trì": item.mainUnit,
+                "Cơ quan phối hợp": item.coopUnit,
+                "Trạng thái": item.status,
+                "Tiến độ (%)": item.progress,
+                "Kết quả / Sản phẩm": item.result
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportList);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "BaoCaoNhiemVu");
+            XLSX.writeFile(wb, `BaoCao_NhiemVu_${currentTab.toUpperCase()}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function importFromExcel(e) {
+            if (!isAdmin) return;
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        alert("File Excel không có dữ liệu!");
+                        return;
+                    }
+
+                    // Map Excel to app data structure
+                    const importedTasks = json.map((row, idx) => ({
+                        id: 'IMP_' + Date.now() + '_' + idx,
+                        stt: row['STT'] || (idx + 1),
+                        sector: row['Lĩnh vực'] || 'I. Về kinh tế',
+                        title: row['Chỉ tiêu / Nhiệm vụ'] || row['Chỉ tiêu'] || row['Nội dung nhiệm vụ'] || 'Nhiệm vụ mới',
+                        unit: row['Đơn vị tính'] || '',
+                        target2030: row['Giai đoạn 2026-2030'] || row['Mục tiêu'] || '',
+                        leader: row['Lãnh đạo phụ trách'] || row['Lãnh đạo UBND phường phụ trách'] || 'Chủ tịch UBND phường',
+                        mainUnit: row['Cơ quan chủ trì'] || row['Đơn vị chủ trì'] || 'Phòng Văn hóa - Xã hội',
+                        coopUnit: row['Cơ quan phối hợp'] || row['Đơn vị phối hợp'] || '',
+                        status: row['Trạng thái'] || 'Chưa thực hiện',
+                        progress: row['Tiến độ (%)'] || row['Tiến độ'] || 0,
+                        result: row['Kết quả / Sản phẩm'] || row['Kết quả'] || 'Chưa có báo cáo',
+                        history: []
+                    }));
+
+                    currentData = importedTasks;
+                    saveData(currentTab, currentData);
+                    populateFilterDropdowns();
+                    renderDashboardAndTable();
+                    alert(`Đã nhập thành công ${importedTasks.length} chỉ tiêu từ file Excel!`);
+                } catch(err) {
+                    console.error(err);
+                    alert("Có lỗi xảy ra khi đọc file Excel! Vui lòng kiểm tra lại định dạng file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
